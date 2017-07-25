@@ -214,40 +214,40 @@ bool saveAsOBJ(ofbx::IScene& scene, const char* path)
 
 		const ofbx::Mesh& mesh = *scene.getMesh(i);
 		const ofbx::Geometry& geom = *mesh.getGeometry();
-		int vertex_count = geom.getVertexCount();
-		const ofbx::Vec3* vertices = geom.getVertices();
-		for (int i = 0; i < vertex_count; ++i)
+		auto vertices = geom.getVertices();
+		fprintf(fp, "# %d vertices\n", vertices.size());
+		for (int i = 0; i < vertices.size(); ++i)
 		{
-			ofbx::Vec3 v = vertices[i];
+			const ofbx::Vec3& v = vertices[i];
 			fprintf(fp, "v %f %f %f\n", v.x, v.y, v.z);
 		}
 
-		bool has_normals = geom.getNormals() != nullptr;
-		if (has_normals)
+		auto normals = geom.getNormals();
+		fprintf(fp, "# %d normals\n", normals.size());
+		for (int i = 0; i < normals.size(); ++i)
 		{
-			const ofbx::Vec3* normals = geom.getNormals();
-			int count = geom.getVertexCount();
-
-			for (int i = 0; i < count; ++i)
-			{
-				ofbx::Vec3 n = normals[i];
-				fprintf(fp, "vn %f %f %f\n", n.x, n.y, n.z);
-			}
+			const ofbx::Vec3& n = normals[i];
+			fprintf(fp, "vn %f %f %f\n", n.x, n.y, n.z);
 		}
 
-		bool has_uvs = geom.getUVs() != nullptr;
-		if (has_uvs)
+		auto uvs = geom.getUVs();
+		fprintf(fp, "# %d UV\n", uvs.size());
+		for (int i = 0; i < uvs.size(); ++i)
 		{
-			const ofbx::Vec2* uvs = geom.getUVs();
-			int count = geom.getVertexCount();
-
-			for (int i = 0; i < count; ++i)
-			{
-				ofbx::Vec2 uv = uvs[i];
-				fprintf(fp, "vt %f %f\n", uv.x, uv.y);
-			}
+			ofbx::Vec2 uv = uvs[i];
+			fprintf(fp, "vt %f %f\n", uv.x, uv.y);
 		}
 
+		size_t count = geom.getTriangleCount();
+		auto indices = geom.getTriangles();
+		fprintf(fp, "# %d triangles\n", count);
+		for (size_t i = 0; i < count; ++i) {
+			int v0 = indices[i * 3]+1;
+			int v1 = indices[i * 3+1]+1;
+			int v2 = indices[i * 3+2]+1;
+			fprintf(fp, "f %i %i %i\n", v0,v1,v2);
+		}
+#if 0
 		bool new_face = true;
 		int count = geom.getVertexCount();
 		for (int i = 0; i < count; ++i)
@@ -260,7 +260,6 @@ bool saveAsOBJ(ofbx::IScene& scene, const char* path)
 			int idx = i + 1;
 			int vertex_idx = indices_offset + idx;
 			fprintf(fp, "%d", vertex_idx);
-
 			if (has_normals)
 			{
 				fprintf(fp, "/%d", idx);
@@ -278,12 +277,12 @@ bool saveAsOBJ(ofbx::IScene& scene, const char* path)
 			{
 				fprintf(fp, "/");
 			}
-
 			new_face = idx < 0;
 			fputc(new_face ? '\n' : ' ', fp);
 		}
 
 		indices_offset += vertex_count;
+#endif
 		++obj_idx;
 	}
 	fclose(fp);
@@ -550,6 +549,8 @@ void initImGUI()
 	io.RenderDrawListsFn = imGUICallback;
 }
 
+extern int __argc;
+extern char **__argv;
 
 bool init()
 {
@@ -563,7 +564,14 @@ bool init()
 	ShowWindow(g_hWnd, SW_SHOW);
 	initImGUI();
 
-	FILE* fp = fopen("c.fbx", "rb");
+	FILE* fp = 0;
+	if (1 < __argc) {
+		fp = fopen(__argv[1], "rb");
+	}
+	else {
+		fp = fopen("b.fbx", "rb");
+	}
+
 	if (!fp) return false;
 
 	fseek(fp, 0, SEEK_END);

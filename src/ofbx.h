@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 
 namespace ofbx
 {
@@ -245,15 +246,17 @@ struct Geometry : Object
 
 	Geometry(const Scene& _scene, const IElement& _element);
 
-	virtual const Vec3* getVertices() const = 0;
-	virtual int getVertexCount() const = 0;
+	virtual const std::vector<Vec3>& getVertices() const = 0;
+	virtual const std::vector<Vec3>& getNormals() const = 0;
+	virtual const std::vector<Vec2>& getUVs() const = 0;
+	virtual const std::vector<Vec4>& getColors() const = 0;
+	virtual const std::vector<Vec3>& getTangents() const = 0;
 
-	virtual const Vec3* getNormals() const = 0;
-	virtual const Vec2* getUVs() const = 0;
-	virtual const Vec4* getColors() const = 0;
-	virtual const Vec3* getTangents() const = 0;
 	virtual const Skin* getSkin() const = 0;
 	virtual const int* getMaterials() const = 0;
+
+	virtual const std::vector<int>& getTriangles() const = 0;
+	virtual size_t getTriangleCount() const = 0;
 };
 
 
